@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Exercise 1
 
-My public repository can be found (here)[link].
+My public repository can be found [here](https://github.com/emmi3105/472_assignment2_ex1).
 
 
 
