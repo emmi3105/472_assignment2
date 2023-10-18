@@ -1,0 +1,77 @@
+---
+title: "Assignment 2"
+author: "201903536"
+date: "02 November 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE} 
+
+knitr::opts_chunk$set(echo = FALSE) 
+
+
+## Setup:
+# Install/load packages
+
+
+```
+
+
+## Exercise 1
+
+My public repository can be found (here)[link].
+
+
+
+## Exercise 2
+
+```{r ex1}
+
+
+```
+
+
+
+
+
+## Exercise 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Appendix: All code in this assignment
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE} 
+
+
+```
