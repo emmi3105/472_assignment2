@@ -12,23 +12,233 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Setup:
 # Install/load packages
-
-
+library(readr)
+library(tidyverse)
+# install.packages("countrycode")
+library(countrycode)
 ```
 
 
 ## Exercise 1
 
-My public repository can be found [here](https://github.com/emmi3105/472_assignment2_ex1).
+### Task: 
+Simulate a version control workflow using git and GitHub.
+
+My public GitHub repository with the solution to this exercise can be found [here](https://github.com/emmi3105/472_assignment2_ex1).
 
 
 
 ## Exercise 2
 
-```{r ex1}
+### Task: 
+Generate a ggplot2 visualisation that answers the following question:
 
+"To what extent did different regions of the world implement some form of recommendation or restriction for citizens to stay at home over the course of 2020-2022? How do the introduction of these restrictions compare to the regions’ implementation of income support over the same period?"
+
+
+
+- country code package
+- Variables of interest: 
+
+
+#### 1. Read in the data
+
+```{r read in the csv file from GitHub}
+# Read in the data from GitHub and save it as cov_data
+
+urlfile = "https://raw.githubusercontent.com/OxCGRT/covid-policy-dataset/main/data/OxCGRT_compact_national_v1.csv"
+cov_data <- read_csv(url(urlfile))
 
 ```
+
+First rows of the dataset:
+
+```{r inspect the data}
+
+# Print the first rows of the dataset
+print(head(cov_data))
+```
+
+Variables in the dataset:
+
+```{r inspect the variables of the dataset}
+
+# List all variables of the dataset 
+print(ls(cov_data))
+```
+
+For this exercise, we are interested in measures that in some form recommend or restrict citizens to stay at home over the course of 2020-2022. 
+
+Rename the variables of interest
+
+
+Clean the dataset:
+
+```{r}
+data_clean <- cov_data %>%
+  # Select the variables of interest
+  select(matches(c("CountryName", 
+                   "CountryCode", 
+                   "RegionName", 
+                   "RegionCode", 
+                   "C6M_Stay at home requirements", 
+                   "E1_Income support", 
+                   "Date"))) %>%
+  # Transform the date variable:
+  mutate(Date = as.character(Date), 
+         Date = ymd(Date)) %>%
+         #round_date(Date, unit="month"))%>%
+  # Add region using the package
+  mutate(RegionName = countrycode(CountryName, "country.name", "region"),
+         RegionCode = countrycode(CountryName, "country.name", "iso2c"))  %>%
+  # Replace whitespace in column names with underscores
+  rename_all(~gsub("\\s", "_", .))
+  # Transform into binary??
+
+
+head(data_clean)
+
+```
+
+
+```{r}
+print(unique(data_clean$RegionName))
+print(unique(data_clean$RegionCode))
+```
+
+Now, our dataset only has 29 variables, of which 15 are C indicators, which are policies recommending the ppl to stay at home.
+
+
+Values for stay at home requirements:
+0 - no measures
+1 - recommend not leaving house
+2 - require not leaving house with exceptions for daily exercise, grocery shopping, and 'essential' trips
+3 - require not leaving house with minimal exceptions (eg allowed to leave once a week, or only one person can leave at a time, etc)
+Blank - no data
+
+```{r}
+print(unique(data_clean$C6M_Stay_at_home_requirements))
+```
+
+
+Values for income support:
+0 - no income support
+1 - government is replacing less than 50% of lost salary (or if a flat sum, it is less than 50% median salary)
+2 - government is replacing 50% or more of lost salary (or if a flat sum, it is greater than 50% median salary)
+Blank - no data
+
+```{r}
+print(unique(data_clean$E1_Income_support))
+```
+
+
+
+
+### Create a binary variable indicating whether there have been restrictions or not:
+
+```{r}
+data_clean$restriction_binary <- ifelse(data_clean$C6M_Stay_at_home_requirements == 1 | data_clean$C6M_Stay_at_home_requirements == 2 | data_clean$C6M_Stay_at_home_requirements == 3, 1, 0)
+
+data_clean$income_binary <- ifelse(data_clean$E1_Income_support == 1 | data_clean$E1_Income_support == 2, 1, 0)
+```
+
+
+```{r}
+data_clean
+```
+
+
+Group the data to plot it by region and get the percentage of observations for each region, for which the binary variable is 1. 
+
+```{r}
+# Group the dataframe and calculate the percentage
+#### NUR FüR MICH!!
+
+percentage_restriction <- data_clean %>%
+  group_by(RegionName, Date) %>%
+  summarise(restriction_percentage = mean(restriction_binary) * 100)
+
+percentage_restriction
+
+percentage_income <- data_clean %>%
+  group_by(RegionName, Date) %>%
+  summarise(income_percentage = mean(income_binary) * 100)
+
+
+percentage_income
+```
+
+
+
+```{r}
+# Group the dataframe and calculate the percentage
+plot_data <- data_clean %>%
+  filter(Date<as.Date("2023-01-01")) %>%
+  group_by(RegionName, Date) %>%
+  mutate(restriction_percentage = mean(restriction_binary) * 100) %>%
+  mutate(income_percentage = mean(income_binary) * 100) %>%
+  drop_na() %>% 
+  ungroup()
+
+plot_data
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+
+my_plot <- ggplot(plot_data, aes(x = Date, group = RegionName)) +
+  geom_smooth(aes(y = restriction_percentage, color = "Restriction"), 
+              linetype = "solid", linewidth = 0.8) +
+  geom_smooth(aes(y = income_percentage, color = "Income"),
+              linetype = "dashed", linewidth = 0.8) +
+  labs(title = "Implementation of stay-at-home policies and income support per region, 2020-2022",
+       x = "Date",
+       y = "Percentage",
+       color = "Region") +
+  scale_color_manual(name = "Policy", values = c("#ff0066", "#33CCFF"), 
+                     labels = c("Income Support", "Stay-at-home policies")) +
+  theme_minimal() +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 50, 100)) +
+  theme(plot.title = element_text(size = 12),
+        axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8),
+        legend.position = "bottom",
+        strip.text.y = element_text(angle = 0),
+        panel.spacing = unit(0.8, "lines"),
+        legend.key.size = unit(0.8, "lines"))
+
+# Adjust width and height as needed
+options(repr.plot.width = 12, repr.plot.height = 8) 
+
+
+final_plot <- my_plot + facet_grid(rows = vars(RegionName))
+
+print(final_plot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39,6 +249,14 @@ My public repository can be found [here](https://github.com/emmi3105/472_assignm
 
 
 
+
+
+
+## Sources
+
+[1] penguins data
+
+[2] Thomas Hale, Noam Angrist, Rafael Goldszmidt, Beatriz Kira, Anna Petherick, Toby Phillips, Samuel Webster, Emily Cameron-Blake, Laura Hallas, Saptarshi Majumdar, and Helen Tatlow. (2021). “A global panel database of pandemic policies (Oxford COVID-19 Government Response Tracker).” Nature Human Behaviour. https://doi.org/10.1038/s41562-021-01079-8
 
 
 
