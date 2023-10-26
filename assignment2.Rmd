@@ -6,17 +6,22 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE} 
+#####################################
+# SETUP
+#####################################
 
 knitr::opts_chunk$set(echo = FALSE) 
 
-
-## Setup:
+#####################################
 # Install/load packages
+#####################################
+
 library(readr)
 library(tidyverse)
-# install.packages("countrycode")
 library(countrycode)
+
 ```
+
 
 
 ## Exercise 1
@@ -37,15 +42,17 @@ Generate a ggplot2 visualisation that answers the following question:
 
 
 
-- country code package
-- Variables of interest: 
-
-
 #### 1. Read in the data
 
-```{r read in the csv file from GitHub}
-# Read in the data from GitHub and save it as cov_data
+```{r read in the data from GitHub, message=FALSE}
 
+#####################################
+# EXERCISE 2
+#####################################
+# Read in the data
+#####################################
+
+# Read in the data from GitHub and save it as cov_data
 urlfile = "https://raw.githubusercontent.com/OxCGRT/covid-policy-dataset/main/data/OxCGRT_compact_national_v1.csv"
 cov_data <- read_csv(url(urlfile))
 
@@ -53,121 +60,125 @@ cov_data <- read_csv(url(urlfile))
 
 First rows of the dataset:
 
-```{r inspect the data}
-
+```{r inspect the data, message=FALSE}
 # Print the first rows of the dataset
 print(head(cov_data))
+
 ```
 
-Variables in the dataset:
-
-```{r inspect the variables of the dataset}
-
-# List all variables of the dataset 
-print(ls(cov_data))
-```
-
-For this exercise, we are interested in measures that in some form recommend or restrict citizens to stay at home over the course of 2020-2022. 
-
-Rename the variables of interest
 
 
-Clean the dataset:
+#### 2. Clean the data
 
-```{r}
+As of now, the dataset includes 56 variables, of which many are not of interest for the visualisation. Furthermore, the date variable is not formatted correctly. Also, the tasks requires us to group the countries into different regions. The dataset does include a variable indicating the country's region called RegionName. However, as seen in the first few rows of the dataset printed out above, the RegionName variable includes missing values, making it impossible to assign the observations to a specific region. Additionally, some of the column names such as "C6M_Stay at home requirements" include white space, which might lead to complications as R may not be able to handle these column names when using certain functions and packages in R.
+
+Therefore, we need to clean the data before we can start with the visualisation. More precisely, we will 
+
+- only select the variables that are needed for the plot so that we can decrease the size of the dataset that we are handling,
+- format the date variable correctly so that it has the format Year-month-day,
+- assign all observations to regions using the countrycode package,
+- replace white space in column names,
+- drop observations with missing values.
+
+
+```{r clean the data}
+
+#####################################
+# Clean the data
+#####################################
+
 data_clean <- cov_data %>%
   # Select the variables of interest
   select(matches(c("CountryName", 
-                   "CountryCode", 
                    "RegionName", 
-                   "RegionCode", 
                    "C6M_Stay at home requirements", 
                    "E1_Income support", 
                    "Date"))) %>%
-  # Transform the date variable:
+  # Format the date variable to Year-month-day
   mutate(Date = as.character(Date), 
          Date = ymd(Date)) %>%
-         #round_date(Date, unit="month"))%>%
-  # Add region using the package
-  mutate(RegionName = countrycode(CountryName, "country.name", "region"),
-         RegionCode = countrycode(CountryName, "country.name", "iso2c"))  %>%
-  # Replace whitespace in column names with underscores
-  rename_all(~gsub("\\s", "_", .))
-  # Transform into binary??
-
-
-head(data_clean)
+  # Add region names using the countrycode package
+  mutate(RegionName = countrycode(CountryName, "country.name", "region")) %>%
+  # Replace white space in column names with underscores
+  rename_all(~gsub("\\s", "_", .)) %>% 
+  # Drop missing values
+  drop_na()
 
 ```
 
+Now, we have a dataset with 202'760 observations and 6 variables. 
+
+1. CountryName indicating the name of the country
+
+2. RegionName indicating the name of the region that the country was assigned to above. The regions are:
 
 ```{r}
+# Print the unique values of the region name variable
 print(unique(data_clean$RegionName))
-print(unique(data_clean$RegionCode))
+
 ```
 
-Now, our dataset only has 29 variables, of which 15 are C indicators, which are policies recommending the ppl to stay at home.
+3. C6M_Stay_at_home_requirements indicating whether the observation had some sort of stay at home requirement
 
-
-Values for stay at home requirements:
-0 - no measures
-1 - recommend not leaving house
-2 - require not leaving house with exceptions for daily exercise, grocery shopping, and 'essential' trips
-3 - require not leaving house with minimal exceptions (eg allowed to leave once a week, or only one person can leave at a time, etc)
-Blank - no data
+This variable is categorical and can take the following values:
 
 ```{r}
+# Check the values of the stay at home requirements variable
 print(unique(data_clean$C6M_Stay_at_home_requirements))
+
 ```
 
+According to the codebook in the repository (SOURCE), the categories mean the following:
 
-Values for income support:
-0 - no income support
-1 - government is replacing less than 50% of lost salary (or if a flat sum, it is less than 50% median salary)
-2 - government is replacing 50% or more of lost salary (or if a flat sum, it is greater than 50% median salary)
-Blank - no data
+- 0 - no measures
+- 1 - recommend not leaving house
+- 2 - require not leaving house with exceptions for daily exercise, grocery shopping, and 'essential' trips
+- 3 - require not leaving house with minimal exceptions (eg allowed to leave once a week, or only one person can leave at a time, etc)
+- Blank - no data
+
+4. E1_Income_support indicating whether the observation received some sort of income support
+
+Similarly to the stay at home requirement, this variable is also categorical and can take the following values:
 
 ```{r}
+# Check the values of the income support variable
 print(unique(data_clean$E1_Income_support))
+
 ```
 
+According to the codebook (SOURCE), the categories mean the following:
+
+- 0 - no income support
+- 1 - government is replacing less than 50% of lost salary (or if a flat sum, it is less than 50% median salary)
+- 2 - government is replacing 50% or more of lost salary (or if a flat sum, it is greater than 50% median salary)
+- Blank - no data
+
+5. Date indicating the date in a Year-month-day format
 
 
 
-### Create a binary variable indicating whether there have been restrictions or not:
+#### 3. Prepare the data for plotting
+
+We have cleaned and filtered the data for the variables of interest. However, the two variables indicating the stay at home requirements and the income support cannot be plotted as they are. The reason for that lies in the fact that the variables are categorical and nominal meaning that the values themselves are not meaningful in a quantitative way. If we were to plot nominal variables without any transformation, the visualisation would be misleading as it would seem as if the difference between the values that the nominal variable tells us something about the order of the variable although the difference itself is arbitrary. Hence, we will create binary variables that merely indicate whether there has been some sort of stay-at-home requirement or income support respectively thereby getting rid of other categories. 
+
+The new variable "restriction_binary" takes a value of 1 if there has been some sort of stay at home restriction and 0 if no requirements at all have been enforced. The new variable "income_binary" takes a value of 1 if the government granted some sort of income support and 0 if no income support at all has been installed.
 
 ```{r}
+
+#####################################
+# Prepare the data for plotting
+#####################################
+
+# Create a binary variable indicating stay at home restrictions
 data_clean$restriction_binary <- ifelse(data_clean$C6M_Stay_at_home_requirements == 1 | data_clean$C6M_Stay_at_home_requirements == 2 | data_clean$C6M_Stay_at_home_requirements == 3, 1, 0)
 
+# Create a binary variable indicating income support
 data_clean$income_binary <- ifelse(data_clean$E1_Income_support == 1 | data_clean$E1_Income_support == 2, 1, 0)
+
 ```
 
 
-```{r}
-data_clean
-```
-
-
-Group the data to plot it by region and get the percentage of observations for each region, for which the binary variable is 1. 
-
-```{r}
-# Group the dataframe and calculate the percentage
-#### NUR FüR MICH!!
-
-percentage_restriction <- data_clean %>%
-  group_by(RegionName, Date) %>%
-  summarise(restriction_percentage = mean(restriction_binary) * 100)
-
-percentage_restriction
-
-percentage_income <- data_clean %>%
-  group_by(RegionName, Date) %>%
-  summarise(income_percentage = mean(income_binary) * 100)
-
-
-percentage_income
-```
-
+Lastly, the data needs to be grouped. Furthermore we need the percentage of the observations for each region for which the binary variables above are 1.
 
 
 ```{r}
@@ -177,15 +188,20 @@ plot_data <- data_clean %>%
   group_by(RegionName, Date) %>%
   mutate(restriction_percentage = mean(restriction_binary) * 100) %>%
   mutate(income_percentage = mean(income_binary) * 100) %>%
-  drop_na() %>% 
+  drop_na() %>%
   ungroup()
 
-plot_data
 ```
 
 
 
+#### 4. Visualisation
+
 ```{r, warning=FALSE, message=FALSE}
+
+#####################################
+# Create the visualisation
+#####################################
 
 my_plot <- ggplot(plot_data, aes(x = Date, group = RegionName)) +
   geom_smooth(aes(y = restriction_percentage, color = "Restriction"), 
@@ -213,42 +229,138 @@ my_plot <- ggplot(plot_data, aes(x = Date, group = RegionName)) +
 # Adjust width and height as needed
 options(repr.plot.width = 12, repr.plot.height = 8) 
 
-
+# Add facets to the plot so that each region is represented in one facet
 final_plot <- my_plot + facet_grid(rows = vars(RegionName))
 
 print(final_plot)
+
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
++++ Add a paragraph explaining why I chose this particular visualisation type.
 
 
 
 ## Exercise 3
 
+### Task:
+
+Write three functions that transform strings according to a three different patterns using regular expressions.
 
 
+#### Transformation a
 
+
+Transformation pattern:
+“apple” -> “pple” | “abacus” -> “bacus” | “Annapolis” -> “nnapolis”
+
+We need to write a function that deletes the first character of the input string. Note that the function must be executable on lowercase strings as well as uppercase strings.
+
+```{r regular expression string a, echo=TRUE}
+
+#####################################
+# EXERCISE 3
+#####################################
+# A
+#####################################
+
+# Write a function that deletes the first character of a string 
+# using a regular expression
+
+function_a <- function(astring) {
+  # Deletes the first character of a string
+  #
+  # Inputs
+  # astring: a string variable
+  #
+  # Output
+  # returns the string without the first character
+  
+  new_string_a <- sub("^.([a-z])", "\\1", astring, ignore.case = TRUE)
+  return(new_string_a)
+}
+
+# Test the function on the example strings
+function_a("apple")
+function_a("abacus")
+function_a("Annapolis")
+
+```
+
+
+#### Transformation b
+
+
+Transformation pattern:
+“apple” -> “pple” | “abacus” -> “bcus” | “Annapolis” -> “Annpolis”
+
+We need to write a function that deletes all lowercase "a" characters of the input string. Note that this time, the function should differentiate between lowercase and uppercase letters.
+
+```{r regular expression string b, echo=TRUE}
+
+#####################################
+# B
+#####################################
+
+# Write a function that deletes all "a"s of a string 
+# that are lowercase using a regular expression
+
+function_b <- function(astring) {
+  # Deletes the all lowercase "a" characters of a string
+  #
+  # Inputs
+  # astring: a string variable
+  #
+  # Output
+  # returns the string without all lowercase "a"s
+  
+  new_string_b <- gsub("a", "", astring, ignore.case = FALSE)
+  return(new_string_b)
+}
+
+# Test the function on the example strings
+function_b("apple")
+function_b("abacus")
+function_b("Annapolis")
+
+```
+
+
+#### Transformation c
+
+
+Transformation pattern:
+“C1_nat_a” -> “C_a” | “D2_state_g” -> “D_g” | “E_Loc_5_i” -> “E_i”
+
+We need a function that returns the first character as well as the last two characters of the string. Note that in this particular exercise, the same result can be achieved in multiple ways. For instance, we could alternatively write a function that keeps the first and the last character of a string and separates them with an underscore. However, we will follow the first option.
+
+```{r regular expression string c, echo=TRUE}
+
+#####################################
+# C
+#####################################
+
+# Write a function that returns the first character and the last two characters
+# of a string using a regular expression
+
+function_c <- function(astring) {
+  # Deletes all characters but the first character and the last two characters of a string
+  #
+  # Inputs
+  # astring: a string variable
+  #
+  # Output
+  # returns the first character and the last two characters
+  
+  new_string_c <- sub("^(.).*(..)$", "\\1\\2", astring, ignore.case = TRUE)
+  return(new_string_c)
+}
+
+# Test the function on the example strings
+function_c("C1_nat_a")
+function_c("D2_state_g")
+function_c("E_Loc_5_i")
+
+```
 
 
 
