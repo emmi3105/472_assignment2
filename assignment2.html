@@ -503,8 +503,8 @@ visualisation type.</p>
 </div>
 <div id="exercise-3" class="section level2">
 <h2>Exercise 3</h2>
-<div id="task-2" class="section level3">
-<h3>Task:</h3>
+<div id="task-1-1" class="section level3">
+<h3>Task 1:</h3>
 <p>Write three functions that transform strings according to a three
 different patterns using regular expressions.</p>
 <div id="transformation-a" class="section level4">
@@ -618,6 +618,172 @@ function_c(&quot;C1_nat_a&quot;)</code></pre>
 <pre><code>## [1] &quot;E_i&quot;</code></pre>
 </div>
 </div>
+<div id="task-2" class="section level3">
+<h3>Task 2:</h3>
+<p>The Gutenberg Project is an open library of over 70,000 books,
+accessible here [<a href="https://www.gutenberg.org/" class="uri">https://www.gutenberg.org/</a>]. In this exercise, you will
+come up with a research question that can be answered by counting the
+incidences of dictionary terms across a selection of books downloaded
+from this website.</p>
+<p>First, develop a simple research question that should seek to compare
+how often a given concept is mentioned across a selection books. An
+example research question might be: “How often are house pets mentioned
+in the works of Jane Austen?” Briefly introduce your question and define
+your concept. Your concept must be measurable using a dictionary of
+words. For example, if our concept is house pets, we could measure
+whether they are mentioned by checking for incidences of “dog”,“cat”,
+and “budgerigar”.</p>
+<p>Next, select and download at least two books as .txt files books from
+the Gutenberg Project that you will use to answer your research
+question. Your choice of books should be relevant to your research
+question.</p>
+<p>Using the quanteda package, build a corpus from your selected books
+(each document should be the entire book) and a dictionary that encodes
+your concept. Then, use your dictionary to count the incidences of your
+concept across these books.</p>
+<p>Finally, discuss your findings and provide an answer to your research
+question.</p>
+<div id="research-question" class="section level4">
+<h4>1. Research question</h4>
+<p>For this task, the following research question should be
+answered:</p>
+<p><strong>How often are different fairytale figures mentioned in
+fairytale books from different countries?</strong></p>
+<p>In order to answer this question, two collections of fairytales are
+downloaded from the Gutenberg Project:</p>
+<ol style="list-style-type: decimal">
+<li><a href="https://www.gutenberg.org/ebooks/2591">Grimm’s fairy tales
+(German)</a></li>
+<li><a href="https://gutenberg.org/ebooks/7439">English fairy
+tales</a></li>
+</ol>
+<p>I used ChatGPT to configure ten different types of popular fairytale
+creatures and came up with the following list:</p>
+<ul>
+<li>Dragon</li>
+<li>Dwarf<br />
+</li>
+<li>Elf</li>
+<li>Fairy</li>
+<li>Giant</li>
+<li>Mermaid</li>
+<li>Prince</li>
+<li>Princess</li>
+<li>Troll</li>
+<li>Witch</li>
+</ul>
+<p>These ten types were then used to count the indices of fairytale
+creatures across the books.</p>
+</div>
+<div id="select-and-download-the-books" class="section level4">
+<h4>2. Select and download the books</h4>
+<p>Firstly, I downloaded the two fairytale collections mentioned above
+as .txt files and read them into R.</p>
+</div>
+<div id="build-a-corpus-from-the-two-books" class="section level4">
+<h4>3. Build a corpus from the two books</h4>
+<p>Then, I created a <code>corpus</code> object from the two texts using
+the <code>quanteda</code> package. This allowed me to not only store the
+content of the two books but to also store the names of each book under
+a so called document variable (<code>docvars</code>). I also stored the
+number of characters as document variables as the varying length of the
+two texts might explain why one book potentially holds more overall
+mentions of fairytale creatures than the other.</p>
+<pre><code>##                  name characters
+## 1 Grimm&#39;s Fairy Tales     540088
+## 2 English Fairy Tales     342944</code></pre>
+<p>As we can see above, the English fairytale book is significantly
+shorter than the German one. Hence, we could expect that the mentions of
+fairytale creatures is generally higher in “Grimm’s Fairy Tales”. Let’s
+find out whether our expectations are met.</p>
+</div>
+<div id="build-a-dictionary-and-use-it-to-count-the-mentions-of-fairytale-creaturs" class="section level4">
+<h4>4. Build a dictionary and use it to count the mentions of fairytale
+creaturs</h4>
+<p>Based on ChatGPT’s suggestions, I built a dictionary holding ten
+prevalent types of fairytale creatures. I used regular expressions to
+make sure that varying spellings of the dictionary keys (for instance in
+case of plural words) will still be considered in the count.</p>
+<pre><code>## Dictionary object with 10 key entries.
+## - [dragon]:
+##   - dragon, dragons
+## - [dwarf]:
+##   - dwarf, dwarves
+## - [elf]:
+##   - elf, elves
+## - [fairy]:
+##   - fairy, faries
+## - [giant]:
+##   - giant, giants
+## - [prince]:
+##   - prince, princes
+## [ reached max_nkey ... 4 more keys ]</code></pre>
+<p>Using the <code>tokens()</code> function and the corpus created in
+the previous step, I create a document-feature matric (dfm). The rows of
+the dfm represent each of the two books and the columns show all words
+included in the books. The cells show the word counts in the respective
+book. The first columns of the dfm are printed out below</p>
+<pre><code>## Document-feature matrix of: 2 documents, 8,724 features (33.00% sparse) and 2 docvars.
+##                      features
+## docs                   the project gutenberg ebook   of grimms   &#39; fairy tales
+##   Grimm&#39;s Fairy Tales 7229      89        88    13 1492      6   4    27    11
+##   English Fairy Tales 4278      88        88    13 1352      6 120    43    45
+##                      features
+## docs                  this
+##   Grimm&#39;s Fairy Tales  373
+##   English Fairy Tales  276
+## [ reached max_nfeat ... 8,714 more features ]</code></pre>
+<p>For instance, the dfm shows that the word “tales” was mentioned 11
+times in Grimm’s Fairy Tales and 45 times in the English Fairy Tales.
+Using the function dfm_lookup(), I check how many times the words in the
+dictionary were mentioned in the two books. The results are printed out
+below.</p>
+<pre><code>## Document-feature matrix of: 2 documents, 10 features (15.00% sparse) and 2 docvars.
+##                      features
+## docs                  dragon dwarf elf fairy giant prince princess troll witch
+##   Grimm&#39;s Fairy Tales     14    60   4    27    47     73      120     0    31
+##   English Fairy Tales      3     1   4    43    93     46       13     6     4
+##                      features
+## docs                  wizard
+##   Grimm&#39;s Fairy Tales      0
+##   English Fairy Tales      0</code></pre>
+</div>
+<div id="discussion-of-the-findings" class="section level4">
+<h4>5. Discussion of the findings</h4>
+<p>As seen in the results printed out above, there are quite large
+differences between the times that different creatures have been
+mentioned in the two fairytale books. Not only do the creatures seem to
+vary in popularity - as for instance seen in comparing the mentions of
+princesses versus the mentions of trolls - but the two books seem to
+have different preferences for fairytale figures. In German fairytales,
+princesses, princes and dwarfs are the most prominent figures, whilst
+English books on the contrary seem to have a strong preference for
+giants. In the ggplot below, these findings are visualised.</p>
+<pre><code>##                doc_id dragon dwarf elf fairy giant prince princess troll witch
+## 1 Grimm&#39;s Fairy Tales     14    60   4    27    47     73      120     0    31
+## 2 English Fairy Tales      3     1   4    43    93     46       13     6     4
+##   wizard
+## 1      0
+## 2      0</code></pre>
+<pre><code>##  [1] &quot;dragon&quot;   &quot;dwarf&quot;    &quot;elf&quot;      &quot;fairy&quot;    &quot;giant&quot;    &quot;prince&quot;  
+##  [7] &quot;princess&quot; &quot;troll&quot;    &quot;witch&quot;    &quot;wizard&quot;</code></pre>
+<p>Lastly, it should be stressed that my basic analysis of the
+popularity of fairytale creatures is flawed. Firstly, there are mistakes
+in counting the instances, such as the neglection of the word “fairy” in
+the context of the story type “fairy tale” rather than the figure of a
+fairy itself. Secondly, it should be noted that the Grimm stories were
+translated from German into English, which might have led to faulty
+translations. For instance, there are several German words that can be
+translated as “wizard” - such as “Hexer” and “Zauberer” - yet might have
+been translated as “sorcerer” or some other synonymous term. This might
+explain why the term “wizard” was not mentioned at all in Grimm’s Fairy
+Tales even though some of the stories might have included a wizard.
+Furthermore, neither the dictionary nor the book examples are finite
+lists making it impossible to formulate generalising conclusions on the
+preferences for some fairytale figures over others in different
+countries.</p>
+</div>
+</div>
 </div>
 <div id="sources" class="section level2">
 <h2>Sources</h2>
@@ -627,6 +793,7 @@ Petherick, Toby Phillips, Samuel Webster, Emily Cameron-Blake, Laura
 Hallas, Saptarshi Majumdar, and Helen Tatlow. (2021). “A global panel
 database of pandemic policies (Oxford COVID-19 Government Response
 Tracker).” Nature Human Behaviour. <a href="https://doi.org/10.1038/s41562-021-01079-8" class="uri">https://doi.org/10.1038/s41562-021-01079-8</a></p>
+<p>[3] Fairytale books</p>
 </div>
 <div id="appendix-all-code-in-this-assignment" class="section level2">
 <h2>Appendix: All code in this assignment</h2>
@@ -643,7 +810,8 @@ knitr::opts_chunk$set(echo = FALSE)
 library(readr)
 library(tidyverse)
 library(countrycode)
-
+library(quanteda)
+library(quanteda.textplots)
 
 #####################################
 # EXERCISE 2
@@ -823,7 +991,53 @@ function_c &lt;- function(astring) {
 # Test the function on the example strings
 function_c(&quot;C1_nat_a&quot;)
 function_c(&quot;D2_state_g&quot;)
-function_c(&quot;E_Loc_5_i&quot;)</code></pre>
+function_c(&quot;E_Loc_5_i&quot;)
+
+# Read the texts from the files
+grimm_book &lt;- read_file(&quot;grimm_fairy_tales.txt&quot;)
+english_book &lt;- read_file(&quot;english_fairy_tales.txt&quot;)
+
+fairy_documents &lt;- c(grimm_book, english_book)
+names(fairy_documents) &lt;- c(&quot;Grimm&#39;s Fairy Tales&quot;, &quot;English Fairy Tales&quot;)
+
+# Create a corpus
+fairy_corpus &lt;- corpus(fairy_documents,
+                           docvars = data.frame(name = names(fairy_documents),
+                                                characters = str_count(fairy_documents))
+                           )
+
+# Print out the document variables
+docvars(fairy_corpus)
+
+# Create a dictionary based on ChatGPT fairytale creature suggestions
+fairy_dict &lt;- dictionary(list(dragon = c(&quot;dragon&quot;, &quot;dragons&quot;),
+                              dwarf = c(&quot;dwarf&quot;, &quot;dwarves&quot;), 
+                              elf = c(&quot;elf&quot;, &quot;elves&quot;), 
+                              fairy = c(&quot;fairy&quot;, &quot;faries&quot;),
+                              giant = c(&quot;giant&quot;, &quot;giants&quot;),
+                              prince = c(&quot;prince&quot;, &quot;princes&quot;),
+                              princess = c(&quot;princess&quot;, &quot;princesses&quot;),
+                              troll = c(&quot;troll&quot;, &quot;trolls&quot;),
+                              witch = c(&quot;witch&quot;, &quot;witches&quot;),
+                              wizard = c(&quot;wizard&quot;, &quot;wizards&quot;)
+                               ))
+fairy_dict
+
+# Convert the corpus to tokens
+fairy_tokens &lt;- tokens(fairy_corpus)
+
+# Convert the tokens to a document-feature matrix (dfm)
+fairy_dfm &lt;- dfm(fairy_tokens)
+fairy_dfm
+
+dfm_dictionary &lt;- dfm_lookup(fairy_dfm, dictionary = fairy_dict,
+                               valuetype = &quot;glob&quot;) 
+dfm_dictionary
+# Convert the dfm to a dataframe
+df &lt;- convert(dfm_dictionary, to = &quot;data.frame&quot;)
+df
+column_names &lt;- colnames(df)[-1]
+column_names</code></pre>
 </div>
 
 
