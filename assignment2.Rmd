@@ -21,6 +21,8 @@ library(tidyverse)
 library(countrycode)
 library(quanteda)
 library(quanteda.textplots)
+library(ggplot2)
+library(reshape2)
 ```
 
 
@@ -107,7 +109,7 @@ data_clean <- cov_data %>%
 
 ```
 
-Now, we have a dataset with 202'760 observations and 6 variables. 
+Now, we have a dataset with 202'760 observations and 5 variables. 
 
 1. CountryName indicating the name of the country
 
@@ -164,7 +166,7 @@ We have cleaned and filtered the data for the variables of interest. However, th
 
 The new variable "restriction_binary" takes a value of 1 if there has been some sort of stay at home restriction and 0 if no requirements at all have been enforced. The new variable "income_binary" takes a value of 1 if the government granted some sort of income support and 0 if no income support at all has been installed.
 
-```{r creare binary variables for stay at home requirement and income support}
+```{r create binary variables for stay at home requirement and income support}
 
 #####################################
 # Prepare the data for plotting
@@ -179,13 +181,11 @@ data_clean$income_binary <- ifelse(data_clean$E1_Income_support == 1 | data_clea
 ```
 
 
-Lastly, the data needs to be grouped. Furthermore we need the percentage of the observations for each region for which the binary variables above are 1.
-
+Lastly, we need the percentage of the observations for each region for which the binary variables above are 1. We do so by firstly grouping the data by region and then calculating the average for the restriction and income binaries by applying mutate() to the grouped data.
 
 ```{r group the plot data and calculate percentages}
 # Group the dataframe and calculate the percentage
 plot_data <- data_clean %>%
-  filter(Date<as.Date("2023-01-01")) %>%
   group_by(RegionName, Date) %>%
   mutate(restriction_percentage = mean(restriction_binary) * 100) %>%
   mutate(income_percentage = mean(income_binary) * 100) %>%
@@ -198,23 +198,27 @@ plot_data <- data_clean %>%
 
 #### 4. Visualisation
 
-```{r, warning=FALSE, message=FALSE}
+```{r visualise the data, warning=FALSE, message=FALSE}
 
 #####################################
 # Create the visualisation
 #####################################
 
 my_plot <- ggplot(plot_data, aes(x = Date, group = RegionName)) +
+  # Add a smooth line for the stay at home requirement percentage
   geom_smooth(aes(y = restriction_percentage, color = "Restriction"), 
               linetype = "solid", linewidth = 0.8) +
+  # Add a smooth line for the income support percentag
   geom_smooth(aes(y = income_percentage, color = "Income"),
               linetype = "dashed", linewidth = 0.8) +
+  # Add a title and axes labels
   labs(title = "Implementation of stay-at-home policies and income support per region, 2020-2022",
        x = "Date",
-       y = "Percentage",
-       color = "Region") +
+       y = "Percentage") + 
+  # Set colors for the two binary variables and add a legend
   scale_color_manual(name = "Policy", values = c("#ff0066", "#33CCFF"), 
                      labels = c("Income Support", "Stay-at-home policies")) +
+  # Add further elements such as the text size, line width, etc.
   theme_minimal() +
   scale_y_continuous(limits = c(0, 100), breaks = c(0, 50, 100)) +
   theme(plot.title = element_text(size = 12),
@@ -233,12 +237,27 @@ options(repr.plot.width = 12, repr.plot.height = 8)
 # Add facets to the plot so that each region is represented in one facet
 final_plot <- my_plot + facet_grid(rows = vars(RegionName))
 
+# Print out the final plot
 print(final_plot)
 
 ```
 
-+++ Add a paragraph explaining why I chose this particular visualisation type.
+#### 5. Discussion of the visualisation
 
+The visualisation above shows the percentage of countries in one region have implemented stay-at-home requirements and income support over the course of 2020-2022. This graph allows to analyse three elements. 
+
+1. Firstly, it allows to compare the implementations of stay-at-home requirements to the implementation of income support in one region. For example, we can deduct that around May/June 2022- no countries in North America had implemented stay-at-home requirements, yet around 50% of North American countries granted income support of some sort. 
+2. Secondly, the graph enables a comparison of policies across different regions. For example, we can see that around May/June 2022, North American countries had no policies requiring the people to stay at home. Yet, at the same time, around 30% - 40% of countries in the region East Asia & Pacific had some sort of stay-at-home requirements.
+3. Lastly, the graph models the change of stay-at-home and income support policies across the time of 2020-2022. For instance, we can see that stay-at-home policies were started to become more prominent around May 2020 across most regions, which intuitively makes sense as the number of Covid cases started to pick up during this time globally (for more information on Covid cases across the different regions, refer to the [World Health organisation](https://covid19.who.int/)).
+
+In the table below, it is summarised why certain graph features were chosen to enable the analyisis of the three elements listed above.
+
+
+| Element | Explanation for the choice of graph features |
+| -------------------------------------------- | -------------------------------------------- |
+| Comparison of stay-at-home and income support policies | Due to the two policy variables originally being stored as categorical, nominal variables, merely plotting them as they were might lead to faulty interpretations as the size of the variables itself is meaningless - they simply represent a category. By transforming these two variables into binary variables and then calculating the mean allows to mitigate that issue. Now, the y-values on the graph simply represent how many countries from one regions have implemented some form of stay-at-home policy or income support at a certain point of time. This transformation also enables to compare the two variables in a useful way meaning that we can easily see when governments tried to mitigate the negative repercussions of stay-at-home requirements with income support. | 
+| Comparison across regions | Plotting the seven regions in different facets makes the graph more readable since there only are two lines in one facets rather than having one plot with 14 lines. |
+| Change of stay-at-home and income support implementations over time | In order to model the change of the binary variables over time, choosing the date variable for the x-axis is advisable. |
 
 
 ## Exercise 3
@@ -259,7 +278,7 @@ We need to write a function that deletes the first character of the input string
 ```{r regular expression string a, echo=TRUE}
 
 #####################################
-# EXERCISE 3
+# EXERCISE 3 - Part 1
 #####################################
 # A
 #####################################
@@ -368,23 +387,14 @@ function_c("E_Loc_5_i")
 
 ### Task 2:
 
-The Gutenberg Project is an open library of over 70,000 books, accessible here [https://www.gutenberg.org/]. In this exercise, you will come up with a research question that can be answered by counting the incidences of dictionary terms across a selection of books downloaded from this website.
-
-First, develop a simple research question that should seek to compare how often a given concept is mentioned across a selection books. An example research question might be: “How often are house pets mentioned in the works of Jane Austen?” Briefly introduce your question and define your concept. Your concept must be measurable using a dictionary of words. For example, if our concept is house pets, we could measure whether they are mentioned by checking for incidences of “dog”,“cat”, and “budgerigar”.
-
-Next, select and download at least two books as .txt files books from the Gutenberg Project that you will use to answer your research question. Your choice of books should be relevant to your research question.
-
-Using the quanteda package, build a corpus from your selected books (each document should be the entire book) and a dictionary that encodes your concept. Then, use your dictionary to count the incidences of your concept across these books.
-
-Finally, discuss your findings and provide an answer to your research question.
-
+Develop a research question that can be answered by counting how often certain words were mentioned in two books extracted from the [Gutenberg Project](https://www.gutenberg.org/) using a dictionary of words.
 
 
 #### 1. Research question
 
 For this task, the following research question should be answered:
 
-**How often are different fairytale figures mentioned in fairytale books from different countries?**
+**Which fairytale figures are the most prominenet ones in German compared to English fairytales?**
 
 In order to answer this question, two collections of fairytales are downloaded from the Gutenberg Project:
 
@@ -398,20 +408,25 @@ I used ChatGPT to configure ten different types of popular fairytale creatures a
 - Elf
 - Fairy
 - Giant
-- Mermaid
 - Prince
 - Princess
 - Troll
 - Witch 
+- Wizard
 
-These ten types were then used to count the indices of fairytale creatures across the books.
+We can now count the number of times these ten fairytale figures were mentioned in the collections of German and English fairytales in order to compare whether the two countries potentially have preferences for different fairytale figures.
 
 
 #### 2. Select and download the books
 
-Firstly, I downloaded the two fairytale collections mentioned above as .txt files and read them into R.
+Firstly, I downloaded the two fairytale collections mentioned above as .txt files and read them into R. The code chunk for this step can be seen in the Appendix.
 
 ```{r read in the books}
+
+#####################################
+# EXERCISE 3 - Part 2
+#####################################
+
 # Read the texts from the files
 grimm_book <- read_file("grimm_fairy_tales.txt")
 english_book <- read_file("english_fairy_tales.txt")
@@ -423,7 +438,7 @@ names(fairy_documents) <- c("Grimm's Fairy Tales", "English Fairy Tales")
 
 #### 3. Build a corpus from the two books
 
-Then, I created a `corpus` object from the two texts using the `quanteda` package. This allowed me to not only store the content of the two books but to also store the names of each book under a so called document variable (`docvars`). I also stored the number of characters as document variables as the varying length of the two texts might explain why one book potentially holds more overall mentions of fairytale creatures than the other.
+Then, I created a `corpus` object from the two texts using the `quanteda` package. This allowed me to not only store the content of the two books but to also store the names of each book under a so called document variable (`docvars`). I also stored the number of characters as document variables as the varying length of the two texts might explain why one book potentially holds more overall mentions of fairytale creatures than the other. The `docvars` are printed out below.
 
 ```{r create a corpus}
 # Create a corpus
@@ -441,7 +456,7 @@ As we can see above, the English fairytale book is significantly shorter than th
 
 #### 4. Build a dictionary and use it to count the mentions of fairytale creaturs
 
-Based on ChatGPT's suggestions, I built a dictionary holding ten prevalent types of fairytale creatures. I used regular expressions to make sure that varying spellings of the dictionary keys (for instance in case of plural words) will still be considered in the count.
+Based on ChatGPT's suggestions, I built a dictionary holding ten prevalent types of fairytale creatures. I used regular expressions to make sure that varying spellings of the dictionary keys (for instance in case of plural words) will still be considered in the count. The dictionary is printed out below.
 
 
 ```{r create a dictionary}
@@ -460,7 +475,7 @@ fairy_dict <- dictionary(list(dragon = c("dragon", "dragons"),
 fairy_dict
 
 ```
-Using the `tokens()` function and the corpus created in the previous step, I create a document-feature matric (dfm). The rows of the dfm represent each of the two books and the columns show all words included in the books. The cells show the word counts in the respective book. The first columns of the dfm are printed out below
+Using the `tokens()` function and the corpus created in the previous step, I create a document-feature matric (dfm). The rows of the dfm represent each of the two books and the columns show all words included in the books. The cells show the word counts in the respective book.
 
 ```{r create a document-feature matrix}
 # Convert the corpus to tokens
@@ -468,44 +483,66 @@ fairy_tokens <- tokens(fairy_corpus)
 
 # Convert the tokens to a document-feature matrix (dfm)
 fairy_dfm <- dfm(fairy_tokens)
-fairy_dfm
 
 ```
 
-For instance, the dfm shows that the word "tales" was mentioned 11 times in Grimm's Fairy Tales and 45 times in the English Fairy Tales. Using the function dfm_lookup(), I check how many times the words in the dictionary were mentioned in the two books. The results are printed out below.
+The dfm can now be used to count the mentions of the different fairytale figures. Using the function dfm_lookup(), I check how many times the words in the dictionary were mentioned in the two books. The results are printed out below.
 
 ```{r}
 dfm_dictionary <- dfm_lookup(fairy_dfm, dictionary = fairy_dict,
                                valuetype = "glob") 
 dfm_dictionary
+
 ```
 
 #### 5. Discussion of the findings
 
 As seen in the results printed out above, there are quite large differences between the times that different creatures have been mentioned in the two fairytale books. Not only do the creatures seem to vary in popularity - as for instance seen in comparing the mentions of princesses versus the mentions of trolls - but the two books seem to have different preferences for fairytale figures. In German fairytales, princesses, princes and dwarfs are the most prominent figures, whilst English books on the contrary seem to have a strong preference for giants. In the ggplot below, these findings are visualised.
 
-```{r}
+
+```{r visualisation of the results}
 # Convert the dfm to a dataframe
 df <- convert(dfm_dictionary, to = "data.frame")
-df
-```
-```{r}
-column_names <- colnames(df)[-1]
-column_names
-```
 
+# Melt the dataframe for better visualization
+df_melted <- melt(df, id.vars = "doc_id")
 
- 
+# Create the ggplot
+ggplot(df_melted, aes(x = variable, y = value, fill = doc_id)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  # Add a title and axes labels
+  labs(title = "Count of Fairytale Figures in English and German Fairy Tale Collections",
+       x = "Fairytale Figures",
+       y = "Count", 
+       fill = "Books") +
+  theme_minimal() +
+  scale_color_manual(name = "Book", values = c("#ff0066", "#33CCFF"), 
+                     labels = c("English Fairy Tales", "Grimm's Fairy Tales")) +
+  theme(plot.title = element_text(size = 12),
+      axis.title = element_text(size = 12),
+      axis.text = element_text(size = 10),
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10),
+      legend.position = "bottom",
+      legend.key.size = unit(0.8, "lines")) +
+  theme(axis.title.x = element_text(margin = margin(t = 10)),
+        axis.title.y = element_text(margin = margin(r = 10)))
+
+```
 
 Lastly, it should be stressed that my basic analysis of the popularity of fairytale creatures is flawed. Firstly, there are mistakes in counting the instances, such as the neglection of the word "fairy" in the context of the story type "fairy tale" rather than the figure of a fairy itself. Secondly, it should be noted that the Grimm stories were translated from German into English, which might have led to faulty translations. For instance, there are several German words that can be translated as "wizard" - such as "Hexer" and "Zauberer" - yet might have been translated as "sorcerer" or some other synonymous term. This might explain why the term "wizard" was not mentioned at all in Grimm's Fairy Tales even though some of the stories might have included a wizard. Furthermore, neither the dictionary nor the book examples are finite lists making it impossible to formulate generalising conclusions on the preferences for some fairytale figures over others in different countries.
 
+
 ## Sources
 
-[1] penguins data
+[1] Horst, A., Hill, A., and Gorman, K. (2020). "palmerpenguins: Palmer Archipelago (Antarctica) penguin data." R package version 0.1.0. https://allisonhorst.github.io/palmerpenguins/. doi: 10.5281/zenodo.3960218.
 
-[2] Thomas Hale, Noam Angrist, Rafael Goldszmidt, Beatriz Kira, Anna Petherick, Toby Phillips, Samuel Webster, Emily Cameron-Blake, Laura Hallas, Saptarshi Majumdar, and Helen Tatlow. (2021). “A global panel database of pandemic policies (Oxford COVID-19 Government Response Tracker).” Nature Human Behaviour. https://doi.org/10.1038/s41562-021-01079-8
+[2] Hale, T., Angrist, N., Goldszmidt, R., Kira, B., Petherick, A., Phillips, T., Webster, S., Cameron-Blake, E., Hallas, L., Majumdar, S., and Tatlow, H.. (2021). "A global panel database of pandemic policies (Oxford COVID-19 Government Response Tracker)." Nature Human Behaviour. doi: 10.1038/s41562-021-01079-8
 
-[3] Fairytale books
+[3a] Grimm, J. and Grimm, W. (Uploaded 2001). "Grimms' Fairy Tales." Project Gutenberg. Retrieved from https://www.gutenberg.org/ebooks/2591
+
+[3b] Jacobs, J. (Uploaded 2005). "English Fairy Tales." Project Gutenberg. Retrieved from https://gutenberg.org/ebooks/7439
+
 
 
 
