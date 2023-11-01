@@ -1,7 +1,7 @@
 ---
 title: "Assignment 2"
-author: "201903536"
-date: "02 November 2023"
+author: "Student ID: 201903536"
+date: "31 October 2023"
 output: html_document
 ---
 
@@ -23,8 +23,12 @@ library(quanteda)
 library(quanteda.textplots)
 library(ggplot2)
 library(reshape2)
+
 ```
 
+## GitHub
+
+The GitHub repository for **this assignment** can be found [here](https://github.com/emmi3105/472_assignment2). Note that the answer for Exercise 1 can be found in a different GitHub repository, which is linked below.
 
 
 ## Exercise 1
@@ -32,7 +36,8 @@ library(reshape2)
 ### Task: 
 Simulate a version control workflow using git and GitHub.
 
-My public GitHub repository with the solution to this exercise can be found [here](https://github.com/emmi3105/472_assignment2_ex1).
+### Answer: 
+The GitHub repository with the solution for **this exercise** can be found [here](https://github.com/emmi3105/472_assignment2_ex1).
 
 
 
@@ -41,11 +46,13 @@ My public GitHub repository with the solution to this exercise can be found [her
 ### Task: 
 Generate a ggplot2 visualisation that answers the following question:
 
-"To what extent did different regions of the world implement some form of recommendation or restriction for citizens to stay at home over the course of 2020-2022? How do the introduction of these restrictions compare to the regions’ implementation of income support over the same period?"
+"To what extent did different regions of the world implement some form of recommendation or restriction for citizens to stay at home over the course of 2020-2022? How does the introduction of these restrictions compare to the regions’ implementation of income support over the same period?"
 
 
 
 #### 1. Read in the data
+
+The data for this task can be found [here](https://github.com/OxCGRT/covid-policy-dataset/blob/main/data/OxCGRT_compact_national_v1.csv). The file is called "OxCGRT_compact_national_v1.csv".
 
 ```{r read in the data from GitHub, message=FALSE}
 
@@ -61,7 +68,7 @@ cov_data <- read_csv(url(urlfile))
 
 ```
 
-First rows of the dataset:
+In order to get a first impression on the contents of the dataset, I printed out the first rows below:
 
 ```{r inspect the data, message=FALSE}
 # Print the first rows of the dataset
@@ -73,13 +80,13 @@ print(head(cov_data))
 
 #### 2. Clean the data
 
-As of now, the dataset includes 56 variables, of which many are not of interest for the visualisation. Furthermore, the date variable is not formatted correctly. Also, the tasks requires us to group the countries into different regions. The dataset does include a variable indicating the country's region called RegionName. However, as seen in the first few rows of the dataset printed out above, the RegionName variable includes missing values, making it impossible to assign the observations to a specific region. Additionally, some of the column names such as "C6M_Stay at home requirements" include white space, which might lead to complications as R may not be able to handle these column names when using certain functions and packages in R.
+As of now, the dataset includes 56 variables, of which many are not of interest for the visualisation. Furthermore, the "Date" variable is not formatted correctly. Also, the tasks requires me to group the countries into different regions. The dataset does include a variable indicating the country's region called "RegionName". However, as seen in the first few rows of the dataset printed out above, the RegionName variable includes missing values, making it impossible to assign all of the observations to a specific region. Additionally, some of the column names such as "C6M_Stay at home requirements" include white space, which might lead to complications as R may not be able to handle these column names when using certain functions and packages.
 
-Therefore, we need to clean the data before we can start with the visualisation. More precisely, we will 
+Therefore, I need to clean the data before I can start with the visualisation. More precisely, I will 
 
-- only select the variables that are needed for the plot so that we can decrease the size of the dataset that we are handling,
+- only select the variables that are needed for the plot so that I can decrease the size of the dataset,
 - format the date variable correctly so that it has the format Year-month-day,
-- assign all observations to regions using the countrycode package,
+- assign all observations to regions using the "countrycode" package,
 - replace white space in column names,
 - drop observations with missing values.
 
@@ -109,11 +116,11 @@ data_clean <- cov_data %>%
 
 ```
 
-Now, we have a dataset with 202'760 observations and 5 variables. 
+Now, I have a dataset with 202'760 observations and 5 variables. The variables are:
 
-1. CountryName indicating the name of the country
+1. "CountryName" indicating the name of the country
 
-2. RegionName indicating the name of the region that the country was assigned to above. The regions are:
+2. "RegionName" indicating the name of the region that the country was assigned to above. The seven different regions are printed out below.
 
 ```{r unique values region}
 # Print the unique values of the region name variable
@@ -121,7 +128,7 @@ print(unique(data_clean$RegionName))
 
 ```
 
-3. C6M_Stay_at_home_requirements indicating whether the observation had some sort of stay at home requirement
+3. "C6M_Stay_at_home_requirements" indicating whether the observation had some sort of stay at home requirement
 
 This variable is categorical and can take the following values:
 
@@ -131,7 +138,7 @@ print(unique(data_clean$C6M_Stay_at_home_requirements))
 
 ```
 
-According to the codebook in the repository (SOURCE), the categories mean the following:
+According to the [codebook](https://github.com/OxCGRT/covid-policy-dataset/blob/main/documentation_and_codebook.md) in the GitHub repository, the categories mean the following:
 
 - 0 - no measures
 - 1 - recommend not leaving house
@@ -139,7 +146,9 @@ According to the codebook in the repository (SOURCE), the categories mean the fo
 - 3 - require not leaving house with minimal exceptions (eg allowed to leave once a week, or only one person can leave at a time, etc)
 - Blank - no data
 
-4. E1_Income_support indicating whether the observation received some sort of income support
+Note that this variable is **ordinal**.
+
+4. "E1_Income_support" indicating whether the observation received some sort of income support
 
 Similarly to the stay at home requirement, this variable is also categorical and can take the following values:
 
@@ -149,22 +158,24 @@ print(unique(data_clean$E1_Income_support))
 
 ```
 
-According to the codebook (SOURCE), the categories mean the following:
+According to the [codebook](https://github.com/OxCGRT/covid-policy-dataset/blob/main/documentation_and_codebook.md), the categories mean the following:
 
 - 0 - no income support
 - 1 - government is replacing less than 50% of lost salary (or if a flat sum, it is less than 50% median salary)
 - 2 - government is replacing 50% or more of lost salary (or if a flat sum, it is greater than 50% median salary)
 - Blank - no data
 
-5. Date indicating the date in a Year-month-day format
+Note that this variable is **ordinal** as well.
+
+5. "Date" indicating the date in a Year-month-day format
 
 
 
 #### 3. Prepare the data for plotting
 
-We have cleaned and filtered the data for the variables of interest. However, the two variables indicating the stay at home requirements and the income support cannot be plotted as they are. The reason for that lies in the fact that the variables are categorical and nominal meaning that the values themselves are not meaningful in a quantitative way. If we were to plot nominal variables without any transformation, the visualisation would be misleading as it would seem as if the difference between the values that the nominal variable tells us something about the order of the variable although the difference itself is arbitrary. Hence, we will create binary variables that merely indicate whether there has been some sort of stay-at-home requirement or income support respectively thereby getting rid of other categories. 
+We have cleaned and filtered the data for the variables of interest. However, the two variables indicating the stay at home requirements and the income support cannot be plotted as they are. The reason for that lies in the fact that the variables are categorical - meaning that the values represent different categories - and ordinal - meaning that the distance between two different categories is not known and thereby not meaningful in a quantitative way. If we were to plot ordinal variables without any transformation, the visualisation would be misleading as it would seem as if the difference between two different holds some sort of quantitative information, although the difference itself is arbitrary. Hence, I will create binary variables that merely indicate whether there has been some sort of stay-at-home requirement or income support respectively thereby getting rid of other categories and the ordinal scale. 
 
-The new variable "restriction_binary" takes a value of 1 if there has been some sort of stay at home restriction and 0 if no requirements at all have been enforced. The new variable "income_binary" takes a value of 1 if the government granted some sort of income support and 0 if no income support at all has been installed.
+The new variable "restriction_binary" takes a value of 1 if there has been some sort of stay at home restriction and 0 if no requirements at all have been enforced. The new variable "income_binary" takes a value of 1 if the government has granted some sort of income support and 0 if no income support at all has been installed.
 
 ```{r create binary variables for stay at home requirement and income support}
 
@@ -181,7 +192,7 @@ data_clean$income_binary <- ifelse(data_clean$E1_Income_support == 1 | data_clea
 ```
 
 
-Lastly, we need the percentage of the observations for each region for which the binary variables above are 1. We do so by firstly grouping the data by region and then calculating the average for the restriction and income binaries by applying mutate() to the grouped data.
+Lastly, I need to create a new variable indicating the percentage of the observations for each region for which the binary variables above are 1. The reason for this step lies in the fact that I need to summarise the values of the binary variables from all countries of one and the same region into one. As the binary variable itself can only take the two values 0 and 1, it makes sense to use the percentage of countries that have installed the requested policies as the variable that should be plotted. I create these two percentage variables by firstly grouping the data by region and then calculating the average for the restriction and income binaries by applying mutate() to the grouped data.
 
 ```{r group the plot data and calculate percentages}
 # Group the dataframe and calculate the percentage
@@ -197,6 +208,8 @@ plot_data <- data_clean %>%
 
 
 #### 4. Visualisation
+
+Below, the plot showing the implementation of stay-at-home policies and income support in seven different global regions over the course of 2020-2022 was printed out. It consists of seven facets rerpesenting one global region each. The x-axis shows the "Date" variable, which holds the time between the beginning of 2020 and the end of 2022. The y-axis shows the percentage of countries from one region. The solid blue line plots how many countries from one region (in percent) implemented stay-at-home policies at each point of time. The dashed pink line demonstrates how many countries from one region (in percent) installed income support at each point of time. Further explanations of and the reasoning behind this visualisation can be found in the paragraph below the graph.
 
 ```{r visualise the data, warning=FALSE, message=FALSE}
 
@@ -244,27 +257,27 @@ print(final_plot)
 
 #### 5. Discussion of the visualisation
 
-The visualisation above shows the percentage of countries in one region have implemented stay-at-home requirements and income support over the course of 2020-2022. This graph allows to analyse three elements. 
+The visualisation above shows the percentage of countries in one region that have implemented stay-at-home requirements and income support over the course of 2020-2022. This graph was chosen as it allows to analyse three elements:
 
-1. Firstly, it allows to compare the implementations of stay-at-home requirements to the implementation of income support in one region. For example, we can deduct that around May/June 2022- no countries in North America had implemented stay-at-home requirements, yet around 50% of North American countries granted income support of some sort. 
-2. Secondly, the graph enables a comparison of policies across different regions. For example, we can see that around May/June 2022, North American countries had no policies requiring the people to stay at home. Yet, at the same time, around 30% - 40% of countries in the region East Asia & Pacific had some sort of stay-at-home requirements.
-3. Lastly, the graph models the change of stay-at-home and income support policies across the time of 2020-2022. For instance, we can see that stay-at-home policies were started to become more prominent around May 2020 across most regions, which intuitively makes sense as the number of Covid cases started to pick up during this time globally (for more information on Covid cases across the different regions, refer to the [World Health organisation](https://covid19.who.int/)).
+1. Firstly, it allows to **compare the implementations of stay-at-home requirements to the implementation of income support in one region**. For example, we can deduct that around May/June 2022, no countries in North America had implemented stay-at-home requirements, yet around 50% of North American countries granted income support of some sort. 
+2. Secondly, the graph enables a **comparison of policies across different regions**. For example, we can see that around May/June 2022, North American countries had no policies requiring the people to stay at home. Yet, at the same time, around 30% - 40% of countries in the region East Asia & Pacific had some sort of stay-at-home requirements.
+3. Lastly, the graph models the **change of stay-at-home and income support policies across the time of 2020-2022**. For instance, we can see that stay-at-home policies started to become more prominent around May 2020 across most regions, which intuitively makes sense as the number of Covid cases started to pick up during this time globally (for more information on Covid cases across the different regions, refer to the [World Health organisation](https://covid19.who.int/)).
 
-In the table below, it is summarised why certain graph features were chosen to enable the analyisis of the three elements listed above.
+In the table below, it is summarised why certain graph features were chosen to enable the analysis of the three elements listed above.
 
 
 | Element | Explanation for the choice of graph features |
 | -------------------------------------------- | -------------------------------------------- |
-| Comparison of stay-at-home and income support policies | Due to the two policy variables originally being stored as categorical, nominal variables, merely plotting them as they were might lead to faulty interpretations as the size of the variables itself is meaningless - they simply represent a category. By transforming these two variables into binary variables and then calculating the mean allows to mitigate that issue. Now, the y-values on the graph simply represent how many countries from one regions have implemented some form of stay-at-home policy or income support at a certain point of time. This transformation also enables to compare the two variables in a useful way meaning that we can easily see when governments tried to mitigate the negative repercussions of stay-at-home requirements with income support. | 
-| Comparison across regions | Plotting the seven regions in different facets makes the graph more readable since there only are two lines in one facets rather than having one plot with 14 lines. |
-| Change of stay-at-home and income support implementations over time | In order to model the change of the binary variables over time, choosing the date variable for the x-axis is advisable. |
+| Comparison of stay-at-home and income support policies | Due to the two policy variables originally being stored as categorical, ordinal variables, merely plotting them as they were might lead to faulty interpretations as the differences in the size of the variable values are meaningless - they simply represent different categories. By transforming these two variables into binary variables and then calculating the mean allows to mitigate that issue. Now, the y-values on the graph simply represent how many countries from one regions have implemented some form of stay-at-home policy or income support at a certain point of time. This transformation also enables to compare the two variables in a useful way meaning that we can easily see when governments tried to mitigate the negative repercussions of stay-at-home requirements with income support. | 
+| Comparison across regions | Plotting the seven regions in different facets makes the graph more readable since there now only are two lines in one facet rather than having one plot with 14 lines. |
+| Change of stay-at-home and income support implementations over time | In order to model the change of the binary variables over time, choosing the "Date" variable for the x-axis is advisable. |
 
 
 ## Exercise 3
 
 ### Task 1:
 
-Write three functions that transform strings according to a three different patterns using regular expressions.
+Write three functions that transform strings according to three different patterns using regular expressions.
 
 
 #### Transformation a
@@ -273,7 +286,7 @@ Write three functions that transform strings according to a three different patt
 Transformation pattern:
 “apple” -> “pple” | “abacus” -> “bacus” | “Annapolis” -> “nnapolis”
 
-We need to write a function that deletes the first character of the input string. Note that the function must be executable on lowercase strings as well as uppercase strings.
+I need to write a function that deletes the first character of the input string. Note that the function must be executable on lowercase strings as well as uppercase strings.
 
 ```{r regular expression string a, echo=TRUE}
 
@@ -304,6 +317,9 @@ function_a("apple")
 function_a("abacus")
 function_a("Annapolis")
 
+# Test the function on my own example string
+function_a("Apfelmark")
+
 ```
 
 
@@ -313,7 +329,7 @@ function_a("Annapolis")
 Transformation pattern:
 “apple” -> “pple” | “abacus” -> “bcus” | “Annapolis” -> “Annpolis”
 
-We need to write a function that deletes all lowercase "a" characters of the input string. Note that this time, the function should differentiate between lowercase and uppercase letters.
+I need to write a function that deletes all lowercase "a" characters of the input string. Note that this time, the function should differentiate between lowercase and uppercase letters.
 
 ```{r regular expression string b, echo=TRUE}
 
@@ -341,6 +357,9 @@ function_b <- function(astring) {
 function_b("apple")
 function_b("abacus")
 function_b("Annapolis")
+
+# Test the function on my own example string
+function_b("Apfelmark")
 
 ```
 
@@ -380,6 +399,9 @@ function_c("C1_nat_a")
 function_c("D2_state_g")
 function_c("E_Loc_5_i")
 
+# Test the function on my own example string
+function_c("F3_city_l")
+
 ```
 
 
@@ -394,14 +416,14 @@ Develop a research question that can be answered by counting how often certain w
 
 For this task, the following research question should be answered:
 
-**Which fairytale figures are the most prominenet ones in German compared to English fairytales?**
+**Which fairy tale figures are the most prominent ones in German compared to English fairy tales?**
 
-In order to answer this question, two collections of fairytales are downloaded from the Gutenberg Project:
+In order to answer this question, two collections of fairy tales are downloaded from the Gutenberg Project:
 
-1. [Grimm's fairy tales (German)](https://www.gutenberg.org/ebooks/2591)
+1. [Grimms' fairy tales (German)](https://www.gutenberg.org/ebooks/2591)
 2. [English fairy tales](https://gutenberg.org/ebooks/7439)
 
-I used ChatGPT to configure ten different types of popular fairytale creatures and came up with the following list:
+I used ChatGPT [1] to configure ten different types of popular fairy tale figures and came up with the following list:
 
 - Dragon
 - Dwarf  
@@ -414,12 +436,12 @@ I used ChatGPT to configure ten different types of popular fairytale creatures a
 - Witch 
 - Wizard
 
-We can now count the number of times these ten fairytale figures were mentioned in the collections of German and English fairytales in order to compare whether the two countries potentially have preferences for different fairytale figures.
+I can now count the number of times these ten fairy tale figures were mentioned in the collections of German and English fairy tales in order to compare whether the two countries potentially have preferences for different fairy tale figures.
 
 
 #### 2. Select and download the books
 
-Firstly, I downloaded the two fairytale collections mentioned above as .txt files and read them into R. The code chunk for this step can be seen in the Appendix.
+Firstly, I downloaded the two fairy tale collections mentioned above as .txt files and read them into R. The code chunk for this step can be seen in the Appendix.
 
 ```{r read in the books}
 
@@ -432,13 +454,13 @@ grimm_book <- read_file("grimm_fairy_tales.txt")
 english_book <- read_file("english_fairy_tales.txt")
 
 fairy_documents <- c(grimm_book, english_book)
-names(fairy_documents) <- c("Grimm's Fairy Tales", "English Fairy Tales")
+names(fairy_documents) <- c("Grimms' Fairy Tales", "English Fairy Tales")
 
 ```
 
 #### 3. Build a corpus from the two books
 
-Then, I created a `corpus` object from the two texts using the `quanteda` package. This allowed me to not only store the content of the two books but to also store the names of each book under a so called document variable (`docvars`). I also stored the number of characters as document variables as the varying length of the two texts might explain why one book potentially holds more overall mentions of fairytale creatures than the other. The `docvars` are printed out below.
+Then, I created a `corpus` object from the two texts using the `quanteda` package. This allowed me to not only store the content of the two books but to also store the names of each book under a so called document variable (`docvars`). I also stored the number of characters as document variables as the varying length of the two texts might explain why one book potentially holds more overall mentions of fairy tale figures than the other. The `docvars` are printed out below.
 
 ```{r create a corpus}
 # Create a corpus
@@ -451,18 +473,18 @@ fairy_corpus <- corpus(fairy_documents,
 docvars(fairy_corpus)
 
 ```
-As we can see above, the English fairytale book is significantly shorter than the German one. Hence, we could expect that the mentions of fairytale creatures is generally higher in "Grimm's Fairy Tales". Let's find out whether our expectations are met.
+As we can see above, the English fairy tale book is significantly shorter than the German one. Hence, we could expect that the mentions of fairy tale figures is generally higher in "Grimms' Fairy Tales". Let's find out whether these expectations are met.
 
 
-#### 4. Build a dictionary and use it to count the mentions of fairytale creaturs
+#### 4. Build a dictionary and use it to count the mentions of fairy tale creaturs
 
-Based on ChatGPT's suggestions, I built a dictionary holding ten prevalent types of fairytale creatures. I made the simplification of only considering the noun in its singular and plural form and neglecting other forms using pre- or suffixes. . The dictionary is printed out below.
+Based on ChatGPT's suggestions, I built a dictionary holding ten prevalent types of fairy tale creatures. For each figure, I made the simplification of only considering the noun in its singular and plural form and neglecting other forms using pre- or suffixes. Furthermore I ignored that the fairy tale figures could also be a part of a different word not refferring to the figure itself, such as "fairy" in the word "fairy tale". The dictionary is printed out below.
 
 
 ```{r create a dictionary}
-# Create a dictionary based on ChatGPT fairytale creature suggestions
+# Create a dictionary based on ChatGPT fairy tale creature suggestions
 fairy_dict <- dictionary(list(dragon = c("dragon", "dragons"),
-                              dwarf = c("dwarf", "dwarves"), 
+                              dwarf = c("dwarf", "dwarfs", "dwarves"), 
                               elf = c("elf", "elves"), 
                               fairy = c("fairy", "faries"),
                               giant = c("giant", "giants"),
@@ -475,7 +497,7 @@ fairy_dict <- dictionary(list(dragon = c("dragon", "dragons"),
 fairy_dict
 
 ```
-Using the `tokens()` function and the corpus created in the previous step, I create a document-feature matric (dfm). The rows of the dfm represent each of the two books and the columns show all words included in the books. The cells show the word counts in the respective book.
+Using the `tokens()` function and the corpus created in the previous step, I create a document-feature matrix (dfm). The rows of the dfm represent each of the two books and the columns show all words included in the books. The cells show the word counts in the respective book.
 
 ```{r create a document-feature matrix}
 # Convert the corpus to tokens
@@ -486,7 +508,7 @@ fairy_dfm <- dfm(fairy_tokens)
 
 ```
 
-The dfm can now be used to count the mentions of the different fairytale figures. Using the function dfm_lookup(), I check how many times the words in the dictionary were mentioned in the two books. The results are printed out below.
+The dfm can now be used to count the mentions of the different fairy tale figures. Using the function dfm_lookup(), I check how many times the words in the dictionary were mentioned in the two books. The results are printed out below.
 
 ```{r}
 dfm_dictionary <- dfm_lookup(fairy_dfm, dictionary = fairy_dict,
@@ -497,7 +519,7 @@ dfm_dictionary
 
 #### 5. Discussion of the findings
 
-As seen in the results printed out above, there are quite large differences between the times that different creatures have been mentioned in the two fairytale books. Not only do the creatures seem to vary in popularity - as for instance seen in comparing the mentions of princesses versus the mentions of trolls - but the two books seem to have different preferences for fairytale figures. In German fairytales, princesses, princes and dwarfs are the most prominent figures, whilst English books on the contrary seem to have a strong preference for giants. In the ggplot below, these findings are visualised.
+As seen in the results printed out above, there are quite large differences between the times that different creatures have been mentioned in the two fairy tale books. Not only do the creatures seem to vary in popularity within one book - as for instance seen in comparing the mentions of princesses versus the mentions of trolls in "Grimms' Fairy Tales" - but the two books seem to have different preferences for fairy tale figures. In German fairy tales, princesses, princes and dwarfs are the most prominent figures, whilst English books on the contrary seem to have a strong preference for giants, princes and fairies. In the ggplot below, these findings are visualised.
 
 
 ```{r visualisation of the results}
@@ -505,6 +527,7 @@ As seen in the results printed out above, there are quite large differences betw
 df <- convert(dfm_dictionary, to = "data.frame")
 
 # Melt the dataframe for better visualization
+# Source: https://www.rdocumentation.org/packages/reshape2/versions/1.4.4/topics/melt.data.frame [2]
 df_melted <- melt(df, id.vars = "doc_id")
 
 # Create the ggplot
@@ -517,7 +540,7 @@ ggplot(df_melted, aes(x = variable, y = value, fill = doc_id)) +
        fill = "Books") +
   theme_minimal() +
   scale_color_manual(name = "Book", values = c("#ff0066", "#33CCFF"), 
-                     labels = c("English Fairy Tales", "Grimm's Fairy Tales")) +
+                     labels = c("English Fairy Tales", "Grimms' Fairy Tales")) +
   theme(plot.title = element_text(size = 12),
       axis.title = element_text(size = 12),
       axis.text = element_text(size = 10),
@@ -530,10 +553,10 @@ ggplot(df_melted, aes(x = variable, y = value, fill = doc_id)) +
 
 ```
 
-Lastly, it should be stressed that my basic analysis of the popularity of fairytale creatures is flawed. Firstly, there are mistakes in counting the instances, such as the neglection of the word "fairy" in the context of the story type "fairy tale" rather than the figure of a fairy itself. Secondly, it should be noted that the Grimm stories were translated from German into English, which might have led to faulty translations. For instance, there are several German words that can be translated as "wizard" - such as "Hexer" and "Zauberer" - yet might have been translated as "sorcerer" or some other synonymous term. This might explain why the term "wizard" was not mentioned at all in Grimm's Fairy Tales even though some of the stories might have included a wizard. Furthermore, neither the dictionary nor the book examples are finite lists making it impossible to formulate generalising conclusions on the preferences for some fairytale figures over others in different countries.
+Lastly, it should be stressed that my basic analysis of the popularity of fairytale creatures is flawed. Firstly, there are mistakes in counting the instances, such as the neglection of the word "fairy" in the context of the story type "fairy tale" rather than the figure of a fairy itself. Secondly, it should be noted that the Grimm stories were translated from German into English, which might have led to faulty translations. For instance, the word "Zauberer" could be translated as "wizard" but also as "sorcerer" or some other synonymous word. Potentially, the absence of wizards in the German fairy tale collection could be caused by faulty translations and not because German fairy tales do not include the figure of a wizard at all. Furthermore, neither the dictionary nor the book examples are finite lists making it impossible to formulate generalising conclusions on the preferences for some fairy tale figures over others in different countries.
 
 
-## Sources
+## Data
 
 [1] Horst, A., Hill, A., and Gorman, K. (2020). "palmerpenguins: Palmer Archipelago (Antarctica) penguin data." R package version 0.1.0. https://allisonhorst.github.io/palmerpenguins/. doi: 10.5281/zenodo.3960218.
 
@@ -543,6 +566,12 @@ Lastly, it should be stressed that my basic analysis of the popularity of fairyt
 
 [3b] Jacobs, J. (Uploaded 2005). "English Fairy Tales." Project Gutenberg. Retrieved from https://gutenberg.org/ebooks/7439
 
+
+## Sources
+
+[1] [ChatGPT](https://chat.openai.com/): Generate a list of prominent fairy tale figures
+
+[2] [R Documentation](https://www.rdocumentation.org/packages/reshape2/versions/1.4.4/topics/melt.data.frame): melt function 
 
 
 
